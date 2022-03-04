@@ -1,0 +1,210 @@
+Define all the LED and Button pins.
+// (RED, GREEN, YELLOW, BLUE)
+int buttons[] = (3, 5, 7, 9); // The four input pins
+int leds[] = (2, 4, 6, 8); // LED pins
+
+
+// Keeps track of the sequence to repeat.
+// Only have the values 0, 1, 2 and 3 in it, used to index the LEDs or Button arrays.
+int sequence[100];
+
+int largestindex = 0; // The largest index in the sequence so far.
+
+// States of the game.
+const int START = 0; // Flashing the LEDs one at a time waiting for the buttons to be pushed.
+const int PLAY = 1; // Playing the game, showing the sequence then waiting for the player.
+const int GAMEOVER = 2; //Flashing lights when the game is over.
+
+int gameState; //Keeps track of the current state.
+
+// Keeps track of time, used when waiting for the buttons to be pressed,
+long currentmillis = 0;
+long previousmillis = 0;
+
+// The setup routine tuns once when you press reset.
+void setup()  {
+
+  // Setting the LED pins to be outputs
+  for(int pin=0; pin<4; pin++)
+  {
+    pinMode(leds[pin], OUTPUT);
+  }
+
+  // Setting the button pins to be inputs.
+  for(int pin=0; pin<4; pin++)
+  {
+    pinMode (buttons[pin], INPUT);
+  }
+
+  gameState = START; // Start the game in the starting state.
+
+  randomSeed(analogRead(40)); // Initializes the pseudo-random number generator.
+}
+
+// The loop routine runs over and over again forever.
+void loop() {
+
+  // The main game loop. 
+  // Execute the code for the current state.
+  if(gameState == START)
+  {
+    // Flash the LEDs waiting for a button to be pushed.
+    waitToStart();
+  }
+  else if(gameState == PLAY)
+  {
+    // Show the current sequence, then read it back.
+    showSequence();
+    readSequence();
+  }
+  else if(gameState == GAMEOVER)
+  {
+    // Blink all the LEDs on/off 5 times then wait to start again.
+    blinkAll(5);
+    gameState = START;
+  }
+
+}
+
+// Adds one to the end of the current sequence then shows the whole sequence. 
+void showSequence()
+{
+  // Add a new index to the end of the sequence.
+  sequence[largestIndex] = random(0,4);
+  largestIndex++;
+
+  // Loop through the seuence flashing the corresponding LEDs.
+  for(int index=0; index<largestIndex; index++)
+  {
+    delay(300);
+    digitalWrite(leds[sequence[index]], HIGH);
+    delay(700);
+    digitalWrite(leds[sequence[index]], LOW);
+  }
+}
+
+// Waits for the player to press the buttons in the same order as the sequence shown.
+void readSequence()
+{ 
+  int positionPressed; // Stores which button was pressed - 0, 1, 2, 3.
+  boolean madeMistake = false;
+
+  // Loops through the sequence waiting for the bittons to be pressed.
+  // As soon as the player makes a mistake the loop exits.
+  for(int index=0; index<largestIndex & madeMistake == false; index++)
+  {
+    // Waiting 2 seconds for the player to press a button/
+    // -1 is returned if no button is pressed and the player is done.
+    positionPressed = waitForButton(2000); //-1, 0, 1, 2 or 3.
+
+    // The player didn't press the button in time or they pressed the wrong button.
+    if(positionPressed == -1 | positionPressed != sequence[index])
+    {
+      madeMistake = true; // Set the flag to exit the loop.
+      gameState = GAMEOVER; // Go to the Game Over state.
+    }
+  }
+}
+
+// Return the position of the Button pressed(0, 1, 2 or 3) or -1 if no button is pressed in the time period.
+int waitForButton(int delay)
+{
+  int buttonPressed = -1;
+  int input;
+  boolean buttonBackUp = false;
+
+  currentMillis = millis(); // The number of ms since the program started running.
+  previousMillis = currentmillis; // Records the point whn we start spinning the loop.
+
+  // Keep spinning the loop until "delay" seconds have passed or
+  // the button is pressed down and let back up. 
+  while (currentMillis - previousMillis < delay & buttonBackUp == false)
+  {
+    // One at a time check to see if a button is being pressed.
+    for(int pin = 0; pin < 4 & buttonBackUp == false; pin++)
+    {
+      if(digitalRead(buttons[pin]) == HIGH)
+      {
+        // Record which button (0, 1, 2, 3) is pressed.
+        buttonPressed = pin;
+
+        // Show the LED pushed.
+        digitalWrite(leds[pin], HIGH);
+
+        // It is possible the button is still being pushed.
+        // This loop spinds until the button is let up.
+        while (currentMillis - previousMillis < delay &buttonBackUp == flase)
+        {
+          input = digitalRead(buttons[pin]);
+          if(input == LOW)
+          {
+            buttonBackUp = true;
+          }
+          currentMillis = millis();
+        }
+
+        // Turn the LED pushed off. 
+        digitalWrite(leds[pin], LOW);
+
+        // See if they look to long.
+        if(currentMillis - previousMillis > delay)
+        {
+          button Pressed = -1; //They took to long to let the button up so they lose.
+        }
+      }
+    }
+
+    currentMillis = Millis();
+  }
+
+  return buttonPressed;
+}
+
+// Shows the LEDs on one at a time waiting for any button to be pressed.
+void waitToStart()
+{
+  int buttonPressed = -1;
+  allOff();
+
+  // Turn each LED on one at a time.
+  for(int pin = 0; pin <4; pin++)
+  {
+    if(buttonPressed == -1)
+    {
+      // Turn an LED on then wait for any button, then turn the LED off. 
+      // buttonPressed will stay as -1 as long as no button is pressed.
+      digitalWrite(leds[pin], HIGH);
+      buttonPressed = waitForButton(800);
+      digitalWrite(leds[pin], LOW);
+    }
+  }
+
+  if(buttonPressed != -1)
+  {
+    // A button was pushed so wait then start playing.
+    delay(1500);
+    largestIndex = 0; // Restart
+    gameState = PLAY;
+  }
+}
+
+// Turnsall the LEDs off.
+void allOff()
+{
+  for(int pin = o; pin < 4; pin++)
+  {
+    digitalWrite(leds[pin], LOW);
+  }
+}
+
+// Blinks all the LEDs 'times' amount of times.
+void blinkAll (int time)
+{
+  for(int count = 0; count < times; count;)
+  {
+    allOn();
+    delay(300);
+    allOff();
+    delay(300);
+  }
+}
